@@ -7,9 +7,6 @@ import sh.hell.compactchess.game.Game;
 import sh.hell.compactchess.game.GameStatus;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import static junit.framework.TestCase.assertEquals;
 
@@ -24,7 +21,7 @@ public class Tests
 	public void lichessExport() throws IOException, ChessException
 	{
 		System.out.println("Lichess Export\n");
-		final LichessAPI lichessAPI = new LichessAPI(Files.readAllLines(Paths.get("lichess_token.txt"), Charset.forName("UTF-8")).get(0));
+		final LichessAPI lichessAPI = new LichessAPI();
 		final Game game = lichessAPI.exportGames(new String[]{"XdQ8329y"}).get(0);
 		visualize(game);
 		System.out.println(game.toPGN());
