@@ -1,3 +1,5 @@
 .idea/
+test_libs/
 out/
 *.iml
+lichess_token.txt
