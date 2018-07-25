@@ -4,7 +4,7 @@ public class ListageAPI extends LichessAPI
 {
 	public ListageAPI()
 	{
-		super("https://listage.ovh", "");
+		super("https://listage.ovh", null);
 	}
 
 	public ListageAPI(String token)

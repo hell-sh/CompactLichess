@@ -22,7 +22,7 @@ public class LichessAPI
 
 	public LichessAPI()
 	{
-		this("https://lichess.org", "");
+		this("https://lichess.org", null);
 	}
 
 	public LichessAPI(String token)
@@ -40,7 +40,10 @@ public class LichessAPI
 	{
 		HttpsURLConnection con = (HttpsURLConnection) new URL(baseUrl + endpoint).openConnection();
 		con.setRequestMethod(method);
-		con.setRequestProperty("Authorization", "Bearer " + token);
+		if(token != null)
+		{
+			con.setRequestProperty("Authorization", "Bearer " + token);
+		}
 		con.setRequestProperty("Accept", "*/*");
 		if(method.equals("POST"))
 		{
@@ -78,7 +81,10 @@ public class LichessAPI
 	{
 		HttpsURLConnection con = (HttpsURLConnection) new URL(baseUrl + endpoint).openConnection();
 		con.setRequestMethod("POST");
-		con.setRequestProperty("Authorization", "Bearer " + token);
+		if(token != null)
+		{
+			con.setRequestProperty("Authorization", "Bearer " + token);
+		}
 		con.setRequestProperty("Accept", "*/*");
 		con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 		con.setRequestProperty("Content-Length", String.valueOf(data.length()));
@@ -191,6 +197,17 @@ public class LichessAPI
 	public boolean isBotAccount() throws IOException
 	{
 		return this.getProfile().getString("title", "").equals("BOT");
+	}
+
+	public boolean upgradeToBotAccount() throws IOException
+	{
+		if(this.isBotAccount())
+		{
+			return true;
+		}
+		this.sendPOSTRequest("https://lichess.org/api/bot/account/upgrade", "");
+		this.profile = null;
+		return this.isBotAccount();
 	}
 
 	public LichessBot startBot(LichessEngineSelector engineSelector) throws ChessException, IOException
