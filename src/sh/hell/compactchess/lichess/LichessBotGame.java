@@ -5,7 +5,7 @@ import com.eclipsesource.json.JsonObject;
 import sh.hell.compactchess.engine.Engine;
 import sh.hell.compactchess.engine.EngineBuilder;
 import sh.hell.compactchess.exceptions.ChessException;
-import sh.hell.compactchess.exceptions.InvalidUCINotationException;
+import sh.hell.compactchess.exceptions.InvalidMoveException;
 import sh.hell.compactchess.game.Color;
 import sh.hell.compactchess.game.Game;
 import sh.hell.compactchess.game.Move;
@@ -105,7 +105,7 @@ public class LichessBotGame extends Thread
 								String[] moves = state.get("moves").asString().split(" ");
 								for(String move : moves)
 								{
-									game.move(move).commit();
+									game.uciMove(move).commit();
 								}
 							}
 							else
@@ -220,7 +220,7 @@ public class LichessBotGame extends Thread
 								{
 									int offset = (moves.length - game.moves.size());
 									String move = moves[moves.length - offset];
-									game.move(move).commit();
+									game.uciMove(move).commit();
 								}
 							}
 							game.whitemsecs = state.get("wtime").asLong();
@@ -262,7 +262,7 @@ public class LichessBotGame extends Thread
 										this.lastScore = engine.score;
 									}
 								}
-								catch(InvalidUCINotationException e)
+								catch(InvalidMoveException e)
 								{
 									System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + e.getMessage());
 								}
