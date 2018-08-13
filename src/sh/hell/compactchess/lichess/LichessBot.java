@@ -15,7 +15,6 @@ public class LichessBot extends Thread
 	final LichessEngineSelector engineSelector;
 	final ArrayList<LichessBotGame> activeGames = new ArrayList<>();
 	final LichessAPI lichessAPI;
-	private Thread thread;
 
 	LichessBot(LichessAPI lichessAPI, LichessEngineSelector engineSelector)
 	{
@@ -72,7 +71,7 @@ public class LichessBot extends Thread
 			InputStream is = lichessAPI.sendRequest("GET", "/api/stream/event");
 			BufferedInputStream bis = new BufferedInputStream(is);
 			Scanner sc = new Scanner(bis).useDelimiter("\\n");
-			while(!this.thread.isInterrupted())
+			while(!this.isInterrupted())
 			{
 				try
 				{
@@ -84,7 +83,7 @@ public class LichessBot extends Thread
 						{
 							case "challenge":
 								JsonObject challenge = event.get("challenge").asObject();
-								lichessAPI.sendRequest("POST", "/challenge/" + challenge.get("id").asString() + "/accept");
+								lichessAPI.sendRequest("POST", "/api/challenge/" + challenge.get("id").asString() + "/accept");
 								break;
 							case "gameStart":
 								synchronized(activeGames)

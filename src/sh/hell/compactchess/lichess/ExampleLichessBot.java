@@ -16,7 +16,7 @@ public class ExampleLichessBot
 		LichessEngineSelector engineSelector = new LichessEngineSelector()
 		{
 			@Override
-			public LichessEngineSelectorResult select(LichessBot lc, Variant variant, TimeControl timeControl, long msecs, long increment, boolean rated, String opponentName, boolean botOpponent) throws IOException, ChessException
+			public LichessEngineSelectorResult select(LichessBot lc, Variant variant, TimeControl timeControl, long msecs, long increment, boolean rated, String opponentName, boolean botOpponent) throws IOException
 			{
 				LichessEngineSelectorResult res = new LichessEngineSelectorResult();
 				res.engineName = "Leela Chess Zero v0.7 at Network ID 190";
@@ -24,10 +24,6 @@ public class ExampleLichessBot
 				if(timeControl == TimeControl.UNLIMITED || msecs > 10800000)
 				{
 					res.abortReason = "Sorry, time controls above Classic are disabled for now.";
-				}
-				else if(variant == null)
-				{
-					res.abortReason = "Sorry, for now I only accept Standard, King of the Hill, Three-check, Antichess, Horde, Racing Kings and From Position.";
 				}
 				else if(variant != Variant.STANDARD)
 				{

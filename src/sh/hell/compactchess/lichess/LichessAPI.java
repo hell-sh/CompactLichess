@@ -124,7 +124,6 @@ public class LichessAPI
 		final JsonObject jsonObject = new JsonObject();
 		jsonObject.add("pgn", game.toPGN());
 		final String data = jsonObject.toString();
-		System.out.println("< " + data);
 		HttpsURLConnection con = (HttpsURLConnection) new URL(baseUrl + "/import").openConnection();
 		con.setRequestMethod("POST");
 		con.setRequestProperty("Accept", "*/*");
@@ -183,7 +182,7 @@ public class LichessAPI
 	{
 		if(this.profile == null)
 		{
-			InputStream is = sendRequest("GET", "/account/me");
+			InputStream is = sendRequest("GET", "/api/account");
 			Scanner scanner = new Scanner(is, "UTF-8");
 			scanner.useDelimiter("\n");
 			String res = scanner.next();
