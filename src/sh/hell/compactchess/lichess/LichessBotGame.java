@@ -138,10 +138,13 @@ public class LichessBotGame extends Thread
 									try
 									{
 										Thread.sleep(20000);
-										lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
-										ligame.sendMessage("player", "Please actually play if you challenge me.");
-										ligame.endReason = "Opponent played no move after 20 seconds.";
-										ligame.interrupt();
+										if(game.plyCount <= 1)
+										{
+											lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
+											ligame.sendMessage("player", "Please actually play if you challenge me.");
+											ligame.endReason = "Opponent played no move after 20 seconds.";
+											ligame.interrupt();
+										}
 									}
 									catch(InterruptedException ignored)
 									{
@@ -305,7 +308,7 @@ public class LichessBotGame extends Thread
 									try
 									{
 										lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/move/" + bestMove);
-										if(game.plyCount <= 2 && botColor == Color.BLACK)
+										if(botColor == Color.WHITE && game.plyCount <= 2)
 										{
 											final LichessBotGame ligame = this;
 											new Thread(()->
@@ -313,10 +316,13 @@ public class LichessBotGame extends Thread
 												try
 												{
 													Thread.sleep(20000);
-													lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
-													ligame.sendMessage("player", "Please actually play if you challenge me.");
-													ligame.endReason = "Opponent played no move after 20 seconds.";
-													ligame.interrupt();
+													if(game.plyCount <= 2)
+													{
+														lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
+														ligame.sendMessage("player", "Please actually play if you challenge me.");
+														ligame.endReason = "Opponent played no move after 20 seconds.";
+														ligame.interrupt();
+													}
 												}
 												catch(InterruptedException ignored)
 												{
@@ -344,8 +350,6 @@ public class LichessBotGame extends Thread
 								else
 								{
 									lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/resign");
-									sendMessage("player", "The engine found no move.");
-									sendMessage("spectator", "The engine found no move.");
 									endReason = "The engine found no move.";
 									break;
 								}
