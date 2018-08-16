@@ -30,7 +30,7 @@ public class LichessBotGame extends Thread
 	private Engine engine;
 	private EngineBuilder fallbackEngine;
 	private Color botColor;
-	private int lastScore = 0;
+	private String eval = "[undetermined]";
 	private String endReason = null;
 
 	LichessBotGame(LichessBot lichessBot, String id)
@@ -212,7 +212,7 @@ public class LichessBotGame extends Thread
 										case "!eval":
 										case "!cp":
 										case "!centipawns":
-											response = "After " + (obj.get("room").asString().equals("player") ? "your" : "my opponent's") + " last move, I think I have " + this.lastScore + " centipawns.";
+											response = "After " + (obj.get("room").asString().equals("player") ? "your" : "my opponent's") + " last move, my evaluation is " + this.eval;
 											break;
 										case "!hardware":
 											response = "GTX 970 4 GB; Intel Xeon X5460, 8 Cores @ 3,16 GHz; 32 GB RAM; Windows 8.1";
@@ -277,7 +277,7 @@ public class LichessBotGame extends Thread
 									if(bestMove_ != null)
 									{
 										bestMove = engine.getBestMove().toUCI();
-										this.lastScore = engine.score;
+										this.eval = engine.getEvaluation();
 									}
 								}
 								catch(InvalidMoveException e)
@@ -296,7 +296,7 @@ public class LichessBotGame extends Thread
 										Engine fallback = fallbackEngine.build();
 										fallback.evaluate(game, mslimit).awaitConclusion();
 										bestMove = fallback.bestMove;
-										this.lastScore = engine.score;
+										this.eval = engine.getEvaluation();
 									}
 									catch(Exception e)
 									{
