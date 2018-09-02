@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class LichessBot extends Thread
 {
 	final LichessEngineSelector engineSelector;

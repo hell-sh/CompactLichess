@@ -20,6 +20,7 @@ import java.net.URLEncoder;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class LichessBotGame extends Thread
 {
 	public final Game game;

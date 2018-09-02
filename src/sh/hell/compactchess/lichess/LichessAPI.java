@@ -14,6 +14,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+@SuppressWarnings({"WeakerAccess", "UnusedReturnValue", "unused"})
 public class LichessAPI
 {
 	final String baseUrl;
