@@ -1,10 +1,9 @@
-package sh.hell.compactchess.lichess;
-
 import org.junit.Test;
 import sh.hell.compactchess.exceptions.ChessException;
 import sh.hell.compactchess.game.EndReason;
 import sh.hell.compactchess.game.Game;
 import sh.hell.compactchess.game.GameStatus;
+import sh.hell.compactchess.lichess.LichessAPI;
 
 import java.io.IOException;
 
