@@ -3,8 +3,6 @@ package sh.hell.compactchess.lichess;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import sh.hell.compactchess.engine.Engine;
-import sh.hell.compactchess.engine.EngineBuilder;
-import sh.hell.compactchess.exceptions.ChessException;
 import sh.hell.compactchess.exceptions.InvalidMoveException;
 import sh.hell.compactchess.game.Color;
 import sh.hell.compactchess.game.Game;
@@ -29,7 +27,6 @@ public class LichessBotGame extends Thread
 	String opponent;
 	private String engineName;
 	private Engine engine;
-	private EngineBuilder fallbackEngine;
 	private Color botColor;
 	private String eval = "[undetermined]";
 	private String endReason = null;
@@ -53,6 +50,7 @@ public class LichessBotGame extends Thread
 				InputStream is = lichessBot.lichessAPI.sendRequest("GET", "/api/bot/game/stream/" + id);
 				BufferedInputStream bis = new BufferedInputStream(is);
 				Scanner sc = new Scanner(bis).useDelimiter("\\n");
+				label:
 				while(!this.isInterrupted())
 				{
 					String line = sc.next();
@@ -61,174 +59,173 @@ public class LichessBotGame extends Thread
 						//System.out.println(lichessBot.baseUrl + "/" + id + " > " + line);
 						JsonObject obj = Json.parse(line).asObject();
 						JsonObject state = null;
-						if(obj.get("type").asString().equals("gameFull"))
+						switch(obj.get("type").asString())
 						{
-							botColor = (obj.get("white").asObject().get("id").asString().equals(lichessBot.lichessAPI.getProfile().get("id").asString()) ? Color.WHITE : Color.BLACK);
-							JsonObject opponentObject = obj.get(botColor == Color.WHITE ? "black" : "white").asObject();
-							String opponentName = opponentObject.get("name").asString();
-							String opponentTitle = opponentObject.get("title").isString() ? opponentObject.get("title").asString() : "";
-							if(opponentTitle.equals(""))
-							{
-								opponent = opponentName;
-							}
-							else
-							{
-								opponent = opponentTitle + " " + opponentName;
-							}
-							game.timeControl = (obj.get("speed").asString().equals("correspondence") ? TimeControl.UNLIMITED : TimeControl.SUDDEN_DEATH);
-							state = obj.get("state").asObject();
-							if(game.timeControl == TimeControl.SUDDEN_DEATH)
-							{
-								game.whitemsecs = state.get("wtime").asLong();
-								game.blackmsecs = state.get("btime").asLong();
-								game.increment = state.get("winc").asLong();
-								if(game.increment > 0)
+							case "gameFull":
+								botColor = (obj.get("white").asObject().get("id").asString().equals(lichessBot.lichessAPI.getProfile().get("id").asString()) ? Color.WHITE : Color.BLACK);
+								JsonObject opponentObject = obj.get(botColor == Color.WHITE ? "black" : "white").asObject();
+								String opponentName = opponentObject.get("name").asString();
+								String opponentTitle = opponentObject.get("title").isString() ? opponentObject.get("title").asString() : "";
+								if(opponentTitle.equals(""))
 								{
-									game.timeControl = TimeControl.INCREMENT;
+									opponent = opponentName;
 								}
-							}
-							game.variant = Variant.fromKey(obj.get("variant").asObject().get("key").asString());
-							LichessEngineSelectorResult selectorResult = null;
-							String abortReason;
-							if(game.variant == null)
-							{
-								abortReason = "Sorry, for now I only accept Standard, King of the Hill, Three-check, Antichess, Horde, Racing Kings and From Position.";
-							}
-							else
-							{
-								selectorResult = lichessBot.engineSelector.select(lichessBot, game.variant, game.timeControl, game.whitemsecs, game.increment, obj.get("rated").asBoolean(), opponentName, opponentTitle.equals("BOT"));
-								abortReason = selectorResult.abortReason;
-							}
-							if(selectorResult == null)
-							{
-								abortReason = "selectorResult is null";
-							}
-							if(abortReason != null)
-							{
-								lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
-								endReason = "Aborted: " + abortReason;
-								sendMessage("player", abortReason);
-								sendMessage("spectator", abortReason);
+								else
+								{
+									opponent = opponentTitle + " " + opponentName;
+								}
+								game.timeControl = (obj.get("speed").asString().equals("correspondence") ? TimeControl.UNLIMITED : TimeControl.SUDDEN_DEATH);
+								state = obj.get("state").asObject();
+								if(game.timeControl == TimeControl.SUDDEN_DEATH)
+								{
+									game.whitemsecs = state.get("wtime").asLong();
+									game.blackmsecs = state.get("btime").asLong();
+									game.increment = state.get("winc").asLong();
+									if(game.increment > 0)
+									{
+										game.timeControl = TimeControl.INCREMENT;
+									}
+								}
+								game.variant = Variant.fromKey(obj.get("variant").asObject().get("key").asString());
+								LichessEngineSelectorResult selectorResult = null;
+								String abortReason;
+								if(game.variant == null)
+								{
+									abortReason = "Sorry, for now I only accept Standard, King of the Hill, Three-check, Antichess, Horde, Racing Kings and From Position.";
+								}
+								else
+								{
+									selectorResult = lichessBot.engineSelector.select(lichessBot, game.variant, game.timeControl, game.whitemsecs, game.increment, obj.get("rated").asBoolean(), opponentName, opponentTitle.equals("BOT"));
+									abortReason = selectorResult.abortReason;
+								}
+								if(selectorResult == null)
+								{
+									abortReason = "selectorResult is null";
+								}
+								if(abortReason != null)
+								{
+									lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
+									endReason = "Aborted: " + abortReason;
+									sendMessage("player", abortReason);
+									sendMessage("spectator", abortReason);
+									break label;
+								}
+								engineName = selectorResult.engineName;
+								engine = selectorResult.engine;
+								game.loadFEN(obj.getString("initialFen", game.variant.startFEN));
+								game.start();
+								if(!state.get("moves").asString().equals("") && game.moves.size() == 0)
+								{
+									String[] moves = state.get("moves").asString().split(" ");
+									for(String move : moves)
+									{
+										game.uciMove(move).commit();
+									}
+								}
+								else
+								{
+									sendMessage("player", selectorResult.startMessage);
+									//sendMessage("player", "I never leave games, but if you claim victory because I apparently did, you will get blocked.");
+									sendMessage("spectator", "No need to wait until the end of this game to challenge me — I can play infinite simultaneous games.");
+								}
+								System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > Started playing " + opponent + ".");
+								if(botColor == Color.BLACK)
+								{
+									final LichessBotGame ligame = this;
+									new Thread(()->
+									{
+										try
+										{
+											Thread.sleep(20000);
+											if(game.plyCount <= 1)
+											{
+												lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
+												ligame.sendMessage("player", "Please actually play if you challenge me.");
+												ligame.endReason = "Opponent played no move after 20 seconds.";
+												ligame.interrupt();
+											}
+										}
+										catch(InterruptedException ignored)
+										{
+										}
+										catch(IOException e)
+										{
+											if(!e.getMessage().contains("Server returned HTTP response code: 500"))
+											{
+												e.printStackTrace();
+											}
+										}
+									}, "LichessBotGame Auto Abort").start();
+								}
 								break;
-							}
-							engineName = selectorResult.engineName;
-							engine = selectorResult.engine;
-							fallbackEngine = selectorResult.fallbackEngine;
-							game.loadFEN(obj.getString("initialFen", game.variant.startFEN));
-							game.start();
-							if(!state.get("moves").asString().equals("") && game.moves.size() == 0)
-							{
-								String[] moves = state.get("moves").asString().split(" ");
-								for(String move : moves)
+							case "gameState":
+								state = obj;
+								break;
+							case "chatLine":
+								String text = obj.get("text").asString();
+								if(obj.get("username").asString().equals("lichess"))
 								{
-									game.uciMove(move).commit();
-								}
-							}
-							else
-							{
-								sendMessage("player", selectorResult.startMessage);
-								//sendMessage("player", "I never leave games, but if you claim victory because I apparently did, you will get blocked.");
-								sendMessage("spectator", "No need to wait until the end of this game to challenge me — I can play infinite simultaneous games.");
-							}
-							System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > Started playing " + opponent + ".");
-							if(botColor == Color.BLACK)
-							{
-								final LichessBotGame ligame = this;
-								new Thread(()->
-								{
-									try
+									if(text.equals("Takeback sent"))
 									{
-										Thread.sleep(20000);
-										if(game.plyCount <= 1)
+										sendMessage(obj.get("room").asString(), "Sorry, I can't accept takebacks yet.");
+									}
+									else if(text.endsWith(" offers draw"))
+									{
+										sendMessage(obj.get("room").asString(), "Sorry, I can't accept draws yet.");
+									}
+									//else if(text.endsWith("+ 15 seconds") && obj.get("room").getAsString().equals("player"))
+									//{
+									//	sendMessage("player", "No need to give me extra time.");
+									//}
+									else if(obj.get("room").asString().equals("player"))
+									{
+										System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + text);
+									}
+								}
+								else if(!obj.get("username").asString().equals(lichessBot.lichessAPI.getProfile().get("username").asString()))
+								{
+									System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + obj.get("room").asString() + " " + obj.get("username").asString() + ": " + text);
+									if(text.startsWith("!"))
+									{
+										String response;
+										switch(text)
 										{
-											lichessBot.lichessAPI.sendRequest("POST", "/api/bot/game/" + id + "/abort");
-											ligame.sendMessage("player", "Please actually play if you challenge me.");
-											ligame.endReason = "Opponent played no move after 20 seconds.";
-											ligame.interrupt();
+											case "!info":
+												response = "Bot API: https://lichess.org/api#tag/Chess-Bot";
+												break;
+											case "!id":
+											case "!identify":
+											case "!name":
+											case "!version":
+											case "!engine":
+											case "!software":
+												response = engineName;
+												break;
+											case "!stats":
+											case "!statistics":
+											case "!games":
+												response = "I'm currently playing " + lichessBot.countPlayerGames() + " player(s) and " + lichessBot.countBotGames() + " bot(s). " + lichessBot.countGames() + " game(s) total.";
+												break;
+											case "!eval":
+											case "!cp":
+											case "!centipawns":
+												response = "After " + (obj.get("room").asString().equals("player") ? "your" : "my opponent's") + " last move, my evaluation is " + this.eval;
+												break;
+											case "!hardware":
+												response = "GTX 970 4 GB; Intel Xeon X5460, 8 Cores @ 3,16 GHz; 32 GB RAM; Windows 8.1";
+												break;
+											default:
+												response = "Unknown command —  I only know !info, !name, !stats, !eval and !hardware.";
+												break;
+										}
+										if(response != null)
+										{
+											sendMessage(obj.get("room").asString(), response);
+											System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + obj.get("room").asString() + " " + lichessBot.lichessAPI.getProfile().get("username").asString() + ": " + response);
 										}
 									}
-									catch(InterruptedException ignored)
-									{
-									}
-									catch(IOException e)
-									{
-										if(!e.getMessage().contains("Server returned HTTP response code: 500"))
-										{
-											e.printStackTrace();
-										}
-									}
-								}, "LichessBotGame Auto Abort").start();
-							}
-						}
-						else if(obj.get("type").asString().equals("gameState"))
-						{
-							state = obj;
-						}
-						else if(obj.get("type").asString().equals("chatLine"))
-						{
-							String text = obj.get("text").asString();
-							if(obj.get("username").asString().equals("lichess"))
-							{
-								if(text.equals("Takeback sent"))
-								{
-									sendMessage(obj.get("room").asString(), "Sorry, I can't accept takebacks yet.");
 								}
-								else if(text.endsWith(" offers draw"))
-								{
-									sendMessage(obj.get("room").asString(), "Sorry, I can't accept draws yet.");
-								}
-								//else if(text.endsWith("+ 15 seconds") && obj.get("room").getAsString().equals("player"))
-								//{
-								//	sendMessage("player", "No need to give me extra time.");
-								//}
-								else if(obj.get("room").asString().equals("player"))
-								{
-									System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + text);
-								}
-							}
-							else if(!obj.get("username").asString().equals(lichessBot.lichessAPI.getProfile().get("username").asString()))
-							{
-								System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + obj.get("room").asString() + " " + obj.get("username").asString() + ": " + text);
-								if(text.startsWith("!"))
-								{
-									String response;
-									switch(text)
-									{
-										case "!info":
-											response = "Bot API: https://lichess.org/api#tag/Chess-Bot";
-											break;
-										case "!id":
-										case "!identify":
-										case "!name":
-										case "!version":
-										case "!engine":
-										case "!software":
-											response = engineName;
-											break;
-										case "!stats":
-										case "!statistics":
-										case "!games":
-											response = "I'm currently playing " + lichessBot.countPlayerGames() + " player(s) and " + lichessBot.countBotGames() + " bot(s). " + lichessBot.countGames() + " game(s) total.";
-											break;
-										case "!eval":
-										case "!cp":
-										case "!centipawns":
-											response = "After " + (obj.get("room").asString().equals("player") ? "your" : "my opponent's") + " last move, my evaluation is " + this.eval;
-											break;
-										case "!hardware":
-											response = "GTX 970 4 GB; Intel Xeon X5460, 8 Cores @ 3,16 GHz; 32 GB RAM; Windows 8.1";
-											break;
-										default:
-											response = "Unknown command —  I only know !info, !name, !stats, !eval and !hardware.";
-											break;
-									}
-									if(response != null)
-									{
-										sendMessage(obj.get("room").asString(), response);
-										System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > " + obj.get("room").asString() + " " + lichessBot.lichessAPI.getProfile().get("username").asString() + ": " + response);
-									}
-								}
-							}
+								break;
 						}
 						if(state != null)
 						{
@@ -247,30 +244,10 @@ public class LichessBotGame extends Thread
 							//System.out.println(game.toString(true, true, true));
 							if(game.toMove == botColor)
 							{
-								long mslimit = 30000;
-								if(game.timeControl != TimeControl.UNLIMITED && game.plyCount > 2)
-								{
-									if(game.whitemsecs <= 5000)
-									{
-										mslimit = 1000;
-									}
-									else if(game.whitemsecs <= 7500)
-									{
-										mslimit = 3000;
-									}
-									else if(game.whitemsecs <= 25000)
-									{
-										mslimit = 5000;
-									}
-									else if(game.whitemsecs <= 120000)
-									{
-										mslimit = 10000;
-									}
-								}
 								String bestMove = null;
 								try
 								{
-									engine.evaluate(game, mslimit).awaitConclusion();
+									engine.evaluate(game).awaitConclusion();
 									//System.out.println("i Score: " + engine.score);
 									//sendMessage("player", "Score: " + engine.score);
 									//sendMessage("spectator", "Score: " + engine.score);
@@ -288,21 +265,6 @@ public class LichessBotGame extends Thread
 								catch(Exception e)
 								{
 									e.printStackTrace();
-								}
-								if(bestMove == null && fallbackEngine != null)
-								{
-									try
-									{
-										System.out.println(lichessBot.lichessAPI.baseUrl + "/" + id + " > Using fallback engine.");
-										Engine fallback = fallbackEngine.build();
-										fallback.evaluate(game, mslimit).awaitConclusion();
-										bestMove = fallback.bestMove;
-										this.eval = engine.getEvaluation();
-									}
-									catch(Exception e)
-									{
-										e.printStackTrace();
-									}
 								}
 								if(bestMove != null)
 								{
@@ -408,12 +370,9 @@ public class LichessBotGame extends Thread
 				sendMessage("spectator", "If you're watching Lichess TV and you're still here, reload to see another game.");
 			}
 		}
-		catch(ChessException e)
+		catch(Exception e)
 		{
-			if(!e.getMessage().equals(""))
-			{
-				e.printStackTrace();
-			}
+			e.printStackTrace();
 		}
 		synchronized(lichessBot.activeGames)
 		{
@@ -421,7 +380,7 @@ public class LichessBotGame extends Thread
 		}
 		if(engine != null)
 		{
-			engine.dispose();
+			engine.interrupt();
 		}
 	}
 
