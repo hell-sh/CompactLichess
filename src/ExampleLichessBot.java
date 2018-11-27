@@ -1,10 +1,12 @@
-package sh.hell.compactchess.lichess;
-
 import sh.hell.compactchess.engine.Engine;
 import sh.hell.compactchess.engine.EngineBuilder;
 import sh.hell.compactchess.exceptions.ChessException;
 import sh.hell.compactchess.game.TimeControl;
 import sh.hell.compactchess.game.Variant;
+import sh.hell.compactchess.lichess.LichessAPI;
+import sh.hell.compactchess.lichess.LichessBot;
+import sh.hell.compactchess.lichess.LichessEngineSelector;
+import sh.hell.compactchess.lichess.LichessEngineSelectorResult;
 
 import java.io.IOException;
 import java.util.Arrays;

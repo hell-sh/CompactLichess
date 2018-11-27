@@ -1,4 +1,4 @@
 .idea/
-test_libs/
 out/
-*.iml
+target/
+CompactLichess.iml
