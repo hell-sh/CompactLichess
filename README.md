@@ -5,7 +5,7 @@ CompactLichess is a Java 8+ library which allows you to interact with the Liches
 - [More information](https://compactchess.cc/lichess)
 - [Downloads](https://github.com/hell-sh/CompactLichess/releases) (dependencies not included)
 
-## Maven2
+## Maven
 
     <repositories>
         <repository>
@@ -17,6 +17,6 @@ CompactLichess is a Java 8+ library which allows you to interact with the Liches
         <dependency>
             <groupId>sh.hell</groupId>
             <artifactId>compactlichess</artifactId>
-            <version>LATEST</version>
+            <version>[1.0.6,2.0)</version>
         </dependency>
     </dependencies>
