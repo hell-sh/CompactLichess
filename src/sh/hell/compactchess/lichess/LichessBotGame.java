@@ -190,32 +190,17 @@ public class LichessBotGame extends Thread
 										String response;
 										switch(text)
 										{
-											case "!info":
-												response = "Bot API: https://lichess.org/api#tag/Chess-Bot";
-												break;
-											case "!id":
-											case "!identify":
-											case "!name":
-											case "!version":
 											case "!engine":
-											case "!software":
 												response = engineName;
 												break;
 											case "!stats":
-											case "!statistics":
-											case "!games":
 												response = "I'm currently playing " + lichessBot.countPlayerGames() + " player(s) and " + lichessBot.countBotGames() + " bot(s). " + lichessBot.countGames() + " game(s) total.";
 												break;
 											case "!eval":
-											case "!cp":
-											case "!centipawns":
 												response = "After " + (obj.get("room").asString().equals("player") ? "your" : "my opponent's") + " last move, my evaluation is " + this.eval;
 												break;
-											case "!hardware":
-												response = "GTX 970 4 GB; Intel Xeon X5460, 8 Cores @ 3,16 GHz; 32 GB RAM; Windows 8.1";
-												break;
 											default:
-												response = "Unknown command —  I only know !info, !name, !stats, !eval and !hardware.";
+												response = "Unknown command. I only know !engine, !stats, and !eval.";
 												break;
 										}
 										if(response != null)

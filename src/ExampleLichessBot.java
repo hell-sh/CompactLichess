@@ -67,7 +67,7 @@ public class ExampleLichessBot
 				{
 					res.engine = new Engine("lczero.exe", Arrays.asList("--threads", "1"));
 				}
-				res.startMessage = startNote + " Good luck. Have fun!";
+				res.startMessage = startNote + " Good luck, have fun!";
 				return res;
 			}
 		};
